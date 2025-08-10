@@ -81,13 +81,19 @@ local coords = {
 	Vector3.new(930, 134, -626),
 	Vector3.new(923, 101, 279),
 	Vector3.new(266, 325, 711),
-	Vector3.new(-833, 54, -444),
 }
 
 -- UPDATE HumanoidRootPart
 local function updateHRP()
 	local char = player.Character or player.CharacterAdded:Wait()
 	humanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end
+
+-- RESPAWN FUNCTION
+local function respawnPlayer()
+	if player.Character and player.Character:FindFirstChild("Humanoid") then
+		player.Character.Humanoid.Health = 0
+	end
 end
 
 -- Dengarkan jika player respawn
@@ -102,10 +108,16 @@ updateHRP()
 task.spawn(function()
 	while task.wait(2) do
 		if isActive and humanoidRootPart then
-			for _, pos in ipairs(coords) do
+			for i, pos in ipairs(coords) do
 				if not isActive then break end
 				humanoidRootPart.CFrame = CFrame.new(pos)
 				task.wait(2)
+			end
+			-- RESPAWN PADA TASK KE 8 (SETELAH SELESAI 7 KOORDINAT)
+			if isActive then
+				print("Respawning player after completing all coordinates...")
+				respawnPlayer()
+				task.wait(3) -- Tunggu respawn selesai
 			end
 		end
 	end
