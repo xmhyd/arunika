@@ -91,9 +91,15 @@ end
 
 -- RESPAWN FUNCTION
 local function respawnPlayer()
-	pcall(function()
-		player:LoadCharacter()
-	end)
+	if player.Character then
+		-- Method 1: Destroy character untuk force respawn
+		player.Character:Destroy()
+		task.wait(0.5)
+		-- Method 2: Load character baru
+		pcall(function()
+			player:LoadCharacter()
+		end)
+	end
 end
 
 -- Dengarkan jika player respawn
@@ -108,20 +114,25 @@ updateHRP()
 task.spawn(function()
 	while task.wait(2) do
 		if isActive and humanoidRootPart then
+			local completedCycle = true
 			for i, pos in ipairs(coords) do
-				if not isActive then break end
+				if not isActive then 
+					completedCycle = false
+					break 
+				end
+				print("Teleporting to coordinate " .. i .. ": " .. tostring(pos))
 				humanoidRootPart.CFrame = CFrame.new(pos)
 				task.wait(2)
 			end
 			-- RESPAWN PADA TASK KE 8 (SETELAH SELESAI 7 KOORDINAT)
-			if isActive then
-				print("Respawning player after completing all coordinates...")
+			if isActive and completedCycle then
+				print("Completed all 7 coordinates. Respawning player...")
 				respawnPlayer()
-				-- Reset humanoidRootPart setelah respawn
-				humanoidRootPart = nil
-				task.wait(3) -- Tunggu respawn selesai
-				-- Update HRP lagi setelah respawn
+				-- Tunggu sampai character baru spawn
+				repeat task.wait(0.1) until player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				-- Update HRP setelah respawn
 				updateHRP()
+				print("Respawn completed, continuing cycle...")
 			end
 		end
 	end
