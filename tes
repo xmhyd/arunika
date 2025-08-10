@@ -91,9 +91,9 @@ end
 
 -- RESPAWN FUNCTION
 local function respawnPlayer()
-	if player.Character and player.Character:FindFirstChild("Humanoid") then
-		player.Character.Humanoid.Health = 0
-	end
+	pcall(function()
+		player:LoadCharacter()
+	end)
 end
 
 -- Dengarkan jika player respawn
@@ -117,7 +117,11 @@ task.spawn(function()
 			if isActive then
 				print("Respawning player after completing all coordinates...")
 				respawnPlayer()
+				-- Reset humanoidRootPart setelah respawn
+				humanoidRootPart = nil
 				task.wait(3) -- Tunggu respawn selesai
+				-- Update HRP lagi setelah respawn
+				updateHRP()
 			end
 		end
 	end
