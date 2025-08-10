@@ -75,13 +75,13 @@ local humanoidRootPart = nil
 
 -- KOORDINAT TELEPORT
 local coords = {
-	Vector3.new(135, 142, -174),
-	Vector3.new(326, 88, -433),
-	Vector3.new(476, 169, -930),
-	Vector3.new(930, 134, -626),
-	Vector3.new(923, 101, 279),
-	Vector3.new(246, 321, 704),
-	Vector3.new(-836, 54, -430),
+	Vector3.new(135, 142, -170),
+	Vector3.new(326, 88, -430),
+	Vector3.new(476, 169, -925),
+	Vector3.new(930, 134, -620),
+	Vector3.new(923, 101, 285),
+	Vector3.new(246, 321, 715),
+	Vector3.new(-833, 54, -444),
 }
 
 -- UPDATE HumanoidRootPart
