@@ -72,6 +72,8 @@ Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
 
 local isActive = false
 local humanoidRootPart = nil
+local humanoid = nil
+local spawnPosition = nil -- Menyimpan posisi awal spawn
 
 -- KOORDINAT TELEPORT
 local coords = {
@@ -83,184 +85,60 @@ local coords = {
 	Vector3.new(266, 325, 711),
 }
 
--- UPDATE HumanoidRootPart
+-- UPDATE HumanoidRootPart dan Humanoid
 local function updateHRP()
 	local char = player.Character or player.CharacterAdded:Wait()
 	humanoidRootPart = char:WaitForChild("HumanoidRootPart")
+	humanoid = char:WaitForChild("Humanoid")
+	
+	-- Simpan posisi spawn awal jika belum tersimpan
+	if not spawnPosition then
+		spawnPosition = humanoidRootPart.Position
+		print("Spawn position saved: " .. tostring(spawnPosition))
+	end
 end
 
--- ENHANCED RESPAWN FUNCTION (TASK 7)
+-- RESPAWN FUNCTION dengan health 0
 local function respawnPlayer()
-	print("Starting respawn sequence...")
-	
-	-- Method 1: Multiple respawn attempts for reliability
-	local attempts = 0
-	local maxAttempts = 3
-	
-	repeat
-		attempts = attempts + 1
-		print("Respawn attempt " .. attempts .. "/" .. maxAttempts)
-		
-		if player.Character then
-			local humanoid = player.Character:FindFirstChild("Humanoid")
-			
-			-- Method A: Set health to 0 (fastest)
-			if humanoid then
-				humanoid.Health = 0
-				task.wait(0.3)
-			end
-			
-			-- Method B: Destroy character completely
-			pcall(function()
-				player.Character:Destroy()
-			end)
-			task.wait(0.5)
-		end
-		
-		-- Method C: Force LoadCharacter
-		local success = pcall(function()
-			player:LoadCharacter()
-		end)
-		
-		if success then
-			print("LoadCharacter called successfully")
-		else
-			print("LoadCharacter failed, trying alternative method...")
-			-- Alternative method: Reset via RemoteEvent if available
-			local resetBindable = game:GetService("StarterGui"):FindFirstChild("ResetCharacter")
-			if resetBindable then
-				pcall(function()
-					resetBindable:Fire()
-				end)
-			end
-		end
-		
-		task.wait(1)
-		
-	until (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) or attempts >= maxAttempts
-	
-	-- Verify respawn success
-	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-		print("Respawn successful!")
-		return true
-	else
-		print("Respawn failed after " .. maxAttempts .. " attempts")
-		-- Emergency fallback: Teleport to spawn if respawn failed
-		task.spawn(function()
-			task.wait(2)
-			if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-				player.Character.HumanoidRootPart.CFrame = CFrame.new(0, 50, 0) -- Safe spawn position
-			end
-		end)
-		return false
+	if player.Character and humanoid then
+		print("Setting health to 0 for respawn...")
+		humanoid.Health = 0
+		-- Tunggu hingga character respawn
+		player.CharacterAdded:Wait()
+		task.wait(1) -- Tunggu sebentar agar character fully loaded
+		updateHRP()
 	end
 end
-
--- EMERGENCY RESPAWN KEYBIND (R KEY)
-uis.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == Enum.KeyCode.R then
-		print("Manual respawn triggered!")
-		respawnPlayer()
-	end
-end)
 
 -- Dengarkan jika player respawn
 player.CharacterAdded:Connect(function()
-	print("New character detected, updating HRP...")
-	task.wait(0.5) -- Wait for character to fully load
 	updateHRP()
-end)
-
--- AUTO-RECONNECT IF CHARACTER IS MISSING
-task.spawn(function()
-	while task.wait(5) do
-		if isActive and not (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) then
-			print("Character missing during active cycle, attempting recovery...")
-			respawnPlayer()
-		end
-	end
 end)
 
 -- Awal
 updateHRP()
 
--- TELEPORT LOOP (MODIFIED)
+-- TELEPORT LOOP
 task.spawn(function()
 	while task.wait(2) do
 		if isActive and humanoidRootPart then
-			local completedCycle = true
 			for i, pos in ipairs(coords) do
-				if not isActive then 
-					completedCycle = false
-					break 
-				end
+				if not isActive then break end
 				
-				-- Safety check before teleport
-				if not (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) then
-					print("Character lost during teleport, recovering...")
-					if respawnPlayer() then
-						updateHRP()
-					else
-						completedCycle = false
-						break
+				-- Task ke-7: Respawn dengan health 0 dan kembali ke spawn
+				if i == 7 then
+					print("Task 7: Respawning player with health 0...")
+					respawnPlayer()
+					-- Teleport ke posisi spawn awal setelah respawn
+					if spawnPosition then
+						print("Teleporting to spawn position: " .. tostring(spawnPosition))
+						humanoidRootPart.CFrame = CFrame.new(spawnPosition)
 					end
-				end
-				
-				print("Teleporting to coordinate " .. i .. ": " .. tostring(pos))
-				humanoidRootPart.CFrame = CFrame.new(pos)
-				task.wait(2)
-			end
-			
-			-- ENHANCED RESPAWN PADA TASK KE 7 (SETELAH SELESAI 6 KOORDINAT)
-			if isActive and completedCycle then
-				print("Completed all 6 coordinates. Starting Task 7: Enhanced Respawn...")
-				
-				-- Show respawn notification
-				task.spawn(function()
-					local notification = Instance.new("TextLabel", gui)
-					notification.Size = UDim2.new(0, 200, 0, 50)
-					notification.Position = UDim2.new(0.5, -100, 0.8, 0)
-					notification.Text = "RESPAWNING..."
-					notification.Font = Enum.Font.GothamBold
-					notification.TextSize = 16
-					notification.TextColor3 = Color3.fromRGB(255, 255, 0)
-					notification.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-					notification.BackgroundTransparency = 0.3
-					Instance.new("UICorner", notification).CornerRadius = UDim.new(0, 8)
-					
-					task.wait(2)
-					notification:Destroy()
-				end)
-				
-				local respawnSuccess = respawnPlayer()
-				
-				if respawnSuccess then
-					-- Tunggu sampai character baru spawn dan fully loaded
-					local waitTime = 0
-					repeat 
-						task.wait(0.1) 
-						waitTime = waitTime + 0.1
-					until (player.Character and player.Character:FindFirstChild("HumanoidRootPart")) or waitTime > 10
-					
-					if waitTime <= 10 then
-						-- Update HRP setelah respawn
-						updateHRP()
-						print("Task 7 completed successfully, continuing cycle...")
-						
-						-- Optional: Brief pause before continuing
-						task.wait(1)
-					else
-						print("Character loading timeout, stopping cycle")
-						isActive = false
-						toggle.Text = "Teleport OFF"
-						toggle.BackgroundColor3 = Color3.fromRGB(60, 0, 90)
-					end
+					break -- Keluar dari loop koordinat setelah respawn
 				else
-					print("Respawn failed, stopping cycle")
-					isActive = false
-					toggle.Text = "Teleport OFF"
-					toggle.BackgroundColor3 = Color3.fromRGB(60, 0, 90)
+					print("Teleporting to coordinate " .. i .. ": " .. tostring(pos))
+					humanoidRootPart.CFrame = CFrame.new(pos)
+					task.wait(2)
 				end
 			end
 		end
@@ -272,10 +150,4 @@ toggle.MouseButton1Click:Connect(function()
 	isActive = not isActive
 	toggle.Text = isActive and "Teleport ON" or "Teleport OFF"
 	toggle.BackgroundColor3 = isActive and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 0, 90)
-	
-	if isActive then
-		print("Teleport cycle started! Press R for manual respawn.")
-	else
-		print("Teleport cycle stopped.")
-	end
 end)
