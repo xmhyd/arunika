@@ -171,7 +171,7 @@ local function startTeleportLoop()
                     
                     wait(2) -- Extra wait for stability
                     currentPos = 1 -- Reset to first position
-                    print("Respawned! Starting new cycle...")
+                    print("Respawned! Starting new cycle from Task 1...")
                 else
                     break
                 end
@@ -202,7 +202,11 @@ end)
 -- Character respawn handler
 player.CharacterAdded:Connect(function()
     wait(2) -- Wait for character to fully load
-    print("Character respawned and ready!")
+    -- Reset position counter when character respawns
+    if isRunning then
+        currentPos = 1
+    end
+    print("Character respawned and ready! Position reset to 1")
 end)
 
 print("Script fully loaded and ready to use!")
