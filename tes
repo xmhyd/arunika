@@ -1,22 +1,40 @@
 local player = game:GetService("Players").LocalPlayer
 local uis = game:GetService("UserInputService")
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+
+-- Tunggu PlayerGui tersedia
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Hapus GUI lama jika ada
+if playerGui:FindFirstChild("KONTOL TESTER") then
+    playerGui:FindFirstChild("KONTOL TESTER"):Destroy()
+end
+
+local gui = Instance.new("ScreenGui")
 gui.Name = "KONTOL TESTER"
 gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
 -- FRAME UTAMA
-local frame = Instance.new("Frame", gui)
+local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 300, 0, 120)
 frame.Position = UDim2.new(0.3, 0, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
-local stroke = Instance.new("UIStroke", frame)
+frame.Parent = gui
+
+local frameCorner = Instance.new("UICorner")
+frameCorner.CornerRadius = UDim.new(0, 10)
+frameCorner.Parent = frame
+
+local stroke = Instance.new("UIStroke")
 stroke.Thickness = 2
 stroke.Color = Color3.fromRGB(255, 0, 255)
+stroke.Parent = frame
+
 -- JUDUL
-local title = Instance.new("TextLabel", frame)
+local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, -40, 0, 40)
 title.Position = UDim2.new(0, 10, 0, 5)
 title.Text = "MEKI"
@@ -25,14 +43,19 @@ title.TextSize = 18
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.BackgroundTransparency = 1
 title.TextXAlignment = Enum.TextXAlignment.Left
+title.Parent = frame
+
 -- WARNA-WARNI JUDUL
-task.spawn(function()
-	while task.wait(3) do
-		title.TextColor3 = Color3.fromHSV(tick() % 5 / 5, 1, 1)
-	end
+spawn(function()
+    while wait(0.1) do
+        if title and title.Parent then
+            title.TextColor3 = Color3.fromHSV((tick() * 0.5) % 1, 1, 1)
+        end
+    end
 end)
+
 -- MINIMIZE
-local minBtn = Instance.new("TextButton", frame)
+local minBtn = Instance.new("TextButton")
 minBtn.Size = UDim2.new(0, 30, 0, 30)
 minBtn.Position = UDim2.new(1, -35, 0, 5)
 minBtn.Text = "-"
@@ -40,19 +63,25 @@ minBtn.Font = Enum.Font.GothamBold
 minBtn.TextSize = 18
 minBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 minBtn.BackgroundColor3 = Color3.fromRGB(80, 0, 80)
-Instance.new("UICorner", minBtn).CornerRadius = UDim.new(0, 8)
+minBtn.Parent = frame
+
+local minBtnCorner = Instance.new("UICorner")
+minBtnCorner.CornerRadius = UDim.new(0, 8)
+minBtnCorner.Parent = minBtn
+
 local isMinimized = false
 minBtn.MouseButton1Click:Connect(function()
-	isMinimized = not isMinimized
-	for _, obj in ipairs(frame:GetChildren()) do
-		if obj:IsA("GuiObject") and obj ~= title and obj ~= minBtn then
-			obj.Visible = not isMinimized
-		end
-	end
-	frame.Size = isMinimized and UDim2.new(0, 300, 0, 50) or UDim2.new(0, 300, 0, 120)
+    isMinimized = not isMinimized
+    for _, obj in pairs(frame:GetChildren()) do
+        if obj:IsA("GuiObject") and obj ~= title and obj ~= minBtn then
+            obj.Visible = not isMinimized
+        end
+    end
+    frame.Size = isMinimized and UDim2.new(0, 300, 0, 50) or UDim2.new(0, 300, 0, 120)
 end)
+
 -- TOGGLE BUTTON
-local toggle = Instance.new("TextButton", frame)
+local toggle = Instance.new("TextButton")
 toggle.Size = UDim2.new(0.9, 0, 0, 40)
 toggle.Position = UDim2.new(0.05, 0, 0, 60)
 toggle.Text = "Teleport OFF"
@@ -60,60 +89,75 @@ toggle.Font = Enum.Font.GothamBold
 toggle.TextSize = 16
 toggle.BackgroundColor3 = Color3.fromRGB(60, 0, 90)
 toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
-Instance.new("UICorner", toggle).CornerRadius = UDim.new(0, 8)
+toggle.Parent = frame
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggle
+
 local isActive = false
 local humanoidRootPart = nil
 local humanoid = nil
+
 -- KOORDINAT TELEPORT
 local coords = {
-	Vector3.new(136, 143, -175),
-	Vector3.new(326, 88, -433),
-	Vector3.new(476, 169, -940),
-	Vector3.new(930, 134, -626),
-	Vector3.new(923, 101, 279),
-	Vector3.new(266, 325, 711),
+    Vector3.new(136, 143, -175),
+    Vector3.new(326, 88, -433),
+    Vector3.new(476, 169, -940),
+    Vector3.new(930, 134, -626),
+    Vector3.new(923, 101, 279),
+    Vector3.new(266, 325, 711),
 }
--- UPDATE HumanoidRootPart DAN HUMANOID
-local function updateHRP()
-	local char = player.Character or player.CharacterAdded:Wait()
-	humanoidRootPart = char:WaitForChild("HumanoidRootPart")
-	humanoid = char:WaitForChild("Humanoid")
+
+-- UPDATE CHARACTER REFERENCES
+local function updateCharacterRefs()
+    if player.Character then
+        humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+        humanoid = player.Character:FindFirstChild("Humanoid")
+        return humanoidRootPart and humanoid
+    end
+    return false
 end
--- Dengarkan jika player respawn
-player.CharacterAdded:Connect(function()
-	updateHRP()
+
+-- INITIAL UPDATE
+updateCharacterRefs()
+
+-- HANDLE CHARACTER RESPAWN
+player.CharacterAdded:Connect(function(character)
+    wait(1) -- Tunggu character fully loaded
+    updateCharacterRefs()
 end)
--- Awal
-updateHRP()
--- TELEPORT LOOP DENGAN RESPAWN
-task.spawn(function()
-	while task.wait(2) do
-		if isActive and humanoidRootPart and humanoid then
-			-- Teleport ke semua koordinat
-			for i, pos in ipairs(coords) do
-				if not isActive then break end
-				humanoidRootPart.CFrame = CFrame.new(pos)
-				print("Teleported to position " .. i .. ": " .. tostring(pos))
-				task.wait(2)
-			end
-			
-			-- Task 7: Respawn player setelah menyelesaikan semua teleport
-			if isActive then
-				print("Completing cycle - respawning player...")
-				-- Kill player untuk respawn
-				humanoid.Health = 0
-				-- Tunggu hingga player respawn
-				player.CharacterAdded:Wait()
-				updateHRP() -- Update references setelah respawn
-				task.wait(3) -- Tunggu sebentar setelah respawn sebelum memulai cycle baru
-				print("Player respawned - starting new teleport cycle")
-			end
-		end
-	end
-end)
--- KLIK TOGGLE
-toggle.MouseButton1Click:Connect(function()
-	isActive = not isActive
-	toggle.Text = isActive and "Teleport ON" or "Teleport OFF"
-	toggle.BackgroundColor3 = isActive and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(60, 0, 90)
-end)
+
+-- TELEPORT LOOP
+spawn(function()
+    while true do
+        wait(2)
+        if isActive then
+            if not updateCharacterRefs() then
+                wait(1)
+                continue
+            end
+            
+            -- Teleport through all coordinates
+            for i, pos in pairs(coords) do
+                if not isActive then break end
+                
+                if updateCharacterRefs() then
+                    humanoidRootPart.CFrame = CFrame.new(pos)
+                    print("Teleported to position " .. i)
+                end
+                
+                wait(2)
+            end
+            
+            -- Task 7: Kill and respawn
+            if isActive and updateCharacterRefs() then
+                print("Cycle complete - respawning...")
+                humanoid.Health = 0
+                
+                -- Wait for respawn
+                player.CharacterAdded:Wait()
+                wait(3) -- Extra wait for full respawn
+                updateCharacterRefs()
+                print("Respawned - new cycle starting")
+            end
