@@ -126,6 +126,13 @@ end
 local function startTeleportLoop()
     spawn(function()
         while isRunning do
+            -- Add 4 second delay at the start of each cycle (after spawn/respawn)
+            if currentPos == 1 then
+                status.Text = "Status: Waiting 4s before Task 1..."
+                print("Waiting 4 seconds before starting Task 1...")
+                wait(4)
+            end
+            
             -- Update status
             status.Text = "Status: Running - Pos " .. currentPos .. "/6"
             
